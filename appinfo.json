@@ -7,12 +7,18 @@
     "longName": "Snow Fall Time",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/house.png",
+                "name": "IMAGE_BKGND",
+                "type": "png"
+            }
+        ]
     },
     "shortName": "SnowFall",
     "uuid": "7b94712e-dbe8-4676-969c-1523259699c8",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": true
     }

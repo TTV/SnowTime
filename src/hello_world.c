@@ -188,6 +188,7 @@ static GBitmap bitmap = {
 Window *window;
 TextLayer *text_layer;
 Layer *bitmap_layer;
+GBitmap *bkgnd;
 
 static struct TFlake{
     bool active;
@@ -196,8 +197,7 @@ static struct TFlake{
 
 void reset_scene() {
     bmpFill(&bitmap, GColorBlack);
-    bmpDrawLine(&bitmap, GPoint(24, 140), GPoint(119, 140), GColorWhite);
-    bmpDrawLine(&bitmap, GPoint(24, 141), GPoint(119, 141), GColorWhite);
+    bmpCopy(bkgnd, &bitmap);
     int c;
     for (c = 0; c < MAX_FLAKES; c++){
         flakes[c].active = 0;
@@ -209,7 +209,7 @@ static void update_display(Layer *layer, GContext *ctx) {
 	graphics_draw_bitmap_in_rect(ctx, &bitmap, GRect(0, 0, 144, 168));
     
     GRect bounds = layer_get_bounds(layer);
-    GRect frame = GRect(0, bounds.size.h - 32, bounds.size.w, bounds.size.h);
+    GRect frame = GRect(0, bounds.size.h - 34, bounds.size.w, bounds.size.h);
 
     time_t def_time;
     struct tm *now;
@@ -290,6 +290,9 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 void handle_init(void) {
+    // background from resouce
+    bkgnd = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BKGND);
+    
     // initialization
     reset_scene();
 
@@ -326,6 +329,9 @@ void handle_deinit(void) {
 	text_layer_destroy(text_layer);
 
     layer_destroy(bitmap_layer);
+
+    // background
+    gbitmap_destroy(bkgnd);
     
 	// Destroy the window
 	window_destroy(window);
