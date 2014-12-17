@@ -218,7 +218,10 @@ static void update_display(Layer *layer, GContext *ctx) {
     def_time = time(NULL);
 	now = localtime(&def_time);    
 
-    strftime(txt, sizeof(txt), "%H:%M", now);
+    if (clock_is_24h_style())
+        strftime(txt, sizeof(txt), "%H:%M", now);
+    else
+        strftime(txt, sizeof(txt), "%I:%M", now);
 
     graphics_context_set_text_color(ctx, GColorWhite);
     graphics_draw_text(ctx, 
