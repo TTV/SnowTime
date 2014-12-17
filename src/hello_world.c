@@ -187,8 +187,10 @@ static GBitmap bitmap = {
 
 Window *window;
 TextLayer *text_layer;
-Layer *bitmap_layer;
+Layer *bitmap_layer, *text_layer_bkgnd;
 GBitmap *bkgnd;
+AppTimer* phraseTimer;
+static char txt[] = "                                        "; // Needs to be static because it's used by the system later.
 
 static struct TFlake{
     bool active;
@@ -216,7 +218,6 @@ static void update_display(Layer *layer, GContext *ctx) {
     def_time = time(NULL);
 	now = localtime(&def_time);    
 
-    static char txt[] = "00:00"; // Needs to be static because it's used by the system later.
     strftime(txt, sizeof(txt), "%H:%M", now);
 
     graphics_context_set_text_color(ctx, GColorWhite);
@@ -240,7 +241,59 @@ int isEmpty(int x, int y){
         return 0;
 }
 
-void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
+static void handle_phrase_timeout(void *data) {
+    phraseTimer = NULL;
+
+    layer_set_hidden(text_layer_bkgnd, true);
+    layer_set_hidden(bitmap_layer, false);
+}
+
+static void handle_accel(AccelAxisType axis, int32_t direction) {
+    if (phraseTimer)
+        return;
+
+    strcpy(txt, "");
+    
+    time_t def_time;
+    struct tm *now;
+    def_time = time(NULL);
+	now = localtime(&def_time);
+
+    if (now->tm_mon == 11){
+        if (now->tm_mday <= 25){
+            snprintf(txt, sizeof(txt), "Sleeps: %d\n\n", 25 - now->tm_mday);
+        }
+    }
+
+    strcat(txt, "Battery: ");
+    BatteryChargeState state = battery_state_service_peek();
+    if (state.is_charging)
+        strcat(txt, "?");
+    else {
+        static char txt2[] = "                                        ";
+        snprintf(txt2, sizeof(txt2), "%d%%", state.charge_percent);
+        strcat(txt, txt2);
+    }
+    strcat(txt, "\n\n");
+
+    strcat(txt, "Conn: ");
+    if (bluetooth_connection_service_peek())
+        strcat(txt, "Yes");
+    else
+        strcat(txt, "No");
+    
+    text_layer_set_text(text_layer, txt);
+    
+    Layer *root_layer = window_get_root_layer(window);
+    GRect frame = layer_get_frame(root_layer);
+    layer_set_frame(text_layer_get_layer(text_layer), GRect(0, 0, frame.size.w, frame.size.h));
+    
+    layer_set_hidden(bitmap_layer, true);
+    layer_set_hidden(text_layer_bkgnd, false);
+    phraseTimer = app_timer_register(6000, &handle_phrase_timeout, NULL);  // 6 second delay before hide
+}
+
+static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
     int c;
     for (c = 0; c < MAX_FLAKES; c++)
         if (flakes[c].active){
@@ -294,21 +347,29 @@ void handle_init(void) {
     bkgnd = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BKGND);
     
     // initialization
+    phraseTimer = NULL;
     reset_scene();
 
 	// Create a window
 	window = window_create();
-    
+
+    // Create text background layer
+    text_layer_bkgnd = layer_create(GRect(0, 0, 144, 168));
+    layer_add_child(window_get_root_layer(window), text_layer_bkgnd);	
+    layer_set_hidden(text_layer_bkgnd, true);	
+
     // Create text layer
 	text_layer = text_layer_create(GRect(0, 0, 144, 154));
 	
 	// Set the text, font, and text alignment
-	text_layer_set_text(text_layer, "Hi 2");
+	text_layer_set_text(text_layer, "");
 	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
+	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
+    text_layer_set_background_color(text_layer, GColorBlack);
+    text_layer_set_text_color(text_layer, GColorWhite);
 	
 	// Add the text layer to the window
-	layer_add_child(window_get_root_layer(window), text_layer_get_layer(text_layer));
+	layer_add_child(text_layer_bkgnd, text_layer_get_layer(text_layer));
 
     // Create bitmap layer
     bitmap_layer = layer_create(GRect(0, 0, 144, 168));
@@ -322,12 +383,21 @@ void handle_init(void) {
 
     // tick event
     tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+    
+    // accel event
+    accel_tap_service_subscribe(&handle_accel);
 }
 
 void handle_deinit(void) {
+    // unsubscribes
+    accel_tap_service_unsubscribe();
+    tick_timer_service_unsubscribe();
+    
 	// Destroy the text layer
 	text_layer_destroy(text_layer);
+    layer_destroy(text_layer_bkgnd);
 
+    // Destroy graphics
     layer_destroy(bitmap_layer);
 
     // background
