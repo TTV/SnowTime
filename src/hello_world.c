@@ -190,7 +190,7 @@ TextLayer *text_layer;
 Layer *bitmap_layer, *text_layer_bkgnd;
 GBitmap *bkgnd;
 AppTimer* phraseTimer;
-static char txt[] = "                                        "; // Needs to be static because it's used by the system later.
+static char txt[] = "sleeps: xxx__dd/mm/yy__battery: xxx%_conn: xxx     "; // Needs to be static because it's used by the system later.
 
 static struct TFlake{
     bool active;
@@ -205,6 +205,7 @@ void reset_scene() {
         flakes[c].active = 0;
         flakes[c].pos = GPoint(0, -1);
     }
+    // bmpDrawLine(&bitmap, GPoint(0, 5), GPoint(144, 5), GColorWhite); // test
 }
 
 static void update_display(Layer *layer, GContext *ctx) {
@@ -255,6 +256,8 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
     if (phraseTimer)
         return;
 
+    static char txt2[] = "                                        ";    
+    
     strcpy(txt, "");
     
     time_t def_time;
@@ -268,16 +271,20 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
         }
     }
 
+    // todo : JSconfiguration for date format
+    strftime(txt2, sizeof(txt), "%d/%m/%y", now);
+    strcat(txt, txt2);
+    strcat(txt, "\n\n");
+    
     strcat(txt, "Battery: ");
     BatteryChargeState state = battery_state_service_peek();
     if (state.is_charging)
         strcat(txt, "?");
     else {
-        static char txt2[] = "                                        ";
         snprintf(txt2, sizeof(txt2), "%d%%", state.charge_percent);
         strcat(txt, txt2);
     }
-    strcat(txt, "\n\n");
+    strcat(txt, "\n");
 
     strcat(txt, "Conn: ");
     if (bluetooth_connection_service_peek())
@@ -329,19 +336,27 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
                 bmpFillRect(&bitmap, GRect(flakes[c].pos.x * 2, flakes[c].pos.y * 2, 2, 2), GColorWhite);
         }
 
-    if (rand() % 4 == 0)
+    // if (rand() % 4 == 0)
         for (c = 0; c < MAX_FLAKES; c++)
             if (!flakes[c].active){
-                flakes[c].pos.x = rand() % 72;
+                int t = rand() % 72;
+                flakes[c].pos.x = t;
                 flakes[c].pos.y = 0;
-                if (bmpGetPixel(&bitmap, flakes[c].pos.x * 2, 0) != GColorBlack){
-                    // full
-                    reset_scene();
-                } else
-                    flakes[c].active = 1;
+                while (!isEmpty(t, flakes[c].pos.y + 1)){
+                    t++;
+                    if (t == 144)
+                        t = 0;
+                    if (t == flakes[c].pos.x){
+                        // full
+                        reset_scene();
+                        // vibes_short_pulse();
+                    }
+                }
+                flakes[c].pos.x = t;
+                flakes[c].active = 1;
                 break;
-        }
-            
+        }     
+    
 	layer_mark_dirty(bitmap_layer);
 }
 
