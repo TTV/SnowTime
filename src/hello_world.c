@@ -252,6 +252,25 @@ static void handle_phrase_timeout(void *data) {
     layer_set_hidden(bitmap_layer, false);
 }
 
+static void easter_egg() {
+    if (phraseTimer)
+        return;
+   
+    strcpy(txt, "\nIt's\nChristmas\n\n:-)");
+    
+    text_layer_set_text(text_layer, txt);
+    
+    Layer *root_layer = window_get_root_layer(window);
+    GRect frame = layer_get_frame(root_layer);
+    layer_set_frame(text_layer_get_layer(text_layer), GRect(0, 0, frame.size.w, frame.size.h));
+    
+    layer_set_hidden(bitmap_layer, true);
+    layer_set_hidden(text_layer_bkgnd, false);
+    phraseTimer = app_timer_register(15000, &handle_phrase_timeout, NULL);  // 15 second delay before hide
+    
+    vibes_long_pulse();
+}
+
 static void handle_accel(AccelAxisType axis, int32_t direction) {
     if (phraseTimer)
         return;
@@ -304,6 +323,12 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
+    // easter egg at mignight
+    if ((tick_time->tm_mon == 11) && (tick_time->tm_mday == 25) && (tick_time->tm_hour == 0) && (tick_time->tm_min == 0) && (tick_time->tm_sec < 10)){
+        easter_egg();
+        return;
+    }
+    
     int c;
     for (c = 0; c < MAX_FLAKES; c++)
         if (flakes[c].active){
