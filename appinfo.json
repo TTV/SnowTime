@@ -15,6 +15,7 @@
             }
         ]
     },
+    "sdkVersion": "2",
     "shortName": "SnowFall",
     "uuid": "7b94712e-dbe8-4676-969c-1523259699c8",
     "versionCode": 1,

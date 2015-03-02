@@ -205,7 +205,6 @@ void reset_scene() {
         flakes[c].active = 0;
         flakes[c].pos = GPoint(0, -1);
     }
-    // bmpDrawLine(&bitmap, GPoint(0, 5), GPoint(144, 5), GColorWhite); // test
 }
 
 static void update_display(Layer *layer, GContext *ctx) {
