@@ -1,10 +1,10 @@
 SnowTime for Pebble
 
-(C) 2014 TTV
+(C) 2014-2015 TTV
 
-V1.0
+V2.0
 
-16-Dec-2014
+30-Nov-2015
 
 Twitter : @TTV69
 Web : http://cleggo.co.uk
