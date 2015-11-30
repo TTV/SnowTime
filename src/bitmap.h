@@ -1,27 +1,45 @@
 #include "pebble.h"
 
-static inline GColor bmpGetPixel(const GBitmap *bmp, int x, int y) {
-    if (x >= bmp->bounds.size.w || y >= bmp->bounds.size.h || x < 0 || y < 0) return -1;
-    int byteoffset = y*bmp->row_size_bytes + x/8;
-    return ((((uint8_t *)bmp->addr)[byteoffset] & (1<<(x%8))) != 0);
+static inline GColor8 bmpGetPixel(const GBitmap *bmp, int x, int y) {
+    int clr;
+    GRect r = gbitmap_get_bounds(bmp);
+    if (gbitmap_get_format(bmp) != GBitmapFormat8Bit)
+        clr = -1;
+    else if (x >= r.size.w || y >= r.size.h || x < 0 || y < 0)
+        clr = -1;
+    else
+        clr = gbitmap_get_data(bmp)[y * gbitmap_get_bytes_per_row(bmp) + x];
+    return (GColor8){.argb = clr};
 }
 
-static inline void bmpPutPixel(GBitmap *bmp, int x, int y, GColor c) {
-    if (x >= bmp->bounds.size.w || y >= bmp->bounds.size.h || x < 0 || y < 0) return;
-    int byteoffset = y*bmp->row_size_bytes + x/8;
-    ((uint8_t *)bmp->addr)[byteoffset] &= ~(1<<(x%8));
-    if (c == GColorWhite) ((uint8_t *)bmp->addr)[byteoffset] |= (1<<(x%8));
+static inline void bmpPutPixel(GBitmap *bmp, int x, int y, GColor8 c) {
+    GRect r = gbitmap_get_bounds(bmp);
+    if (gbitmap_get_format(bmp) != GBitmapFormat8Bit)
+        return;
+    if (x >= r.size.w || y >= r.size.h || x < 0 || y < 0)
+        return;
+    gbitmap_get_data(bmp)[y * gbitmap_get_bytes_per_row(bmp) + x] = c.argb;
 }
 
 static void bmpCopy(const GBitmap *src, GBitmap *dst) {
-    for (int y=0; y<dst->bounds.size.h; y++) {
-        for (int x=0; x<dst->bounds.size.w; x++) {
+    if (gbitmap_get_format(dst) != GBitmapFormat8Bit)
+        return;
+    if (gbitmap_get_format(src) != GBitmapFormat8Bit) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Bad SRC img format %d, should be %d", gbitmap_get_format(src), GBitmapFormat8Bit);
+        return;
+    }
+    GRect r = gbitmap_get_bounds(dst);
+    for (int y = 0; y < r.size.h; y++) {
+        for (int x = 0; x < r.size.w; x++) {
             bmpPutPixel(dst, x, y, bmpGetPixel(src, x, y));
         }
     }
 }
 
 static inline void bmpFillRect(GBitmap *bmp, GRect rect, GColor c) {
+    if (gbitmap_get_format(bmp) != GBitmapFormat8Bit)
+        return;
+
     int i, j;
     int xe = rect.origin.x + rect.size.w;
     int ye = rect.origin.y + rect.size.h;
@@ -34,11 +52,14 @@ static inline void bmpFillRect(GBitmap *bmp, GRect rect, GColor c) {
 }
 
 static inline void bmpFill(GBitmap *bmp, GColor c) {
-	int i, l = bmp->row_size_bytes*bmp->bounds.size.h;
-	uint8_t p = 0xff * c;
-	uint8_t *d = bmp->addr;
+    if (gbitmap_get_format(bmp) != GBitmapFormat8Bit)
+        return;
+
+    GRect r = gbitmap_get_bounds(bmp);
+	int i, l = gbitmap_get_bytes_per_row(bmp) * r.size.h;
+	uint8_t *d = gbitmap_get_data(bmp);
 	
 	for (i=0; i<l; i++) {
-		d[i] = p;
+		d[i] = c.argb;
 	}
 }

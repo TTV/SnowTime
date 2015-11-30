@@ -9,16 +9,18 @@
     "resources": {
         "media": [
             {
-                "file": "images/house.png",
-                "name": "IMAGE_BKGND",
+                "file": "images/house2.png",
+                "name": "IMAGE_BKGND_2",
                 "type": "png"
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "SnowFall",
+    "targetPlatforms": [
+        "basalt"
+    ],
     "uuid": "7b94712e-dbe8-4676-969c-1523259699c8",
-    "versionCode": 1,
     "versionLabel": "1.7",
     "watchapp": {
         "watchface": true
