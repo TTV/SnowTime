@@ -1,7 +1,9 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "DISABLE_SHAKE": 1
+    },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "ttv69",
     "longName": "Snow Fall Time 2",

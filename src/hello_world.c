@@ -2,7 +2,8 @@
 #include <time.h>
 #include <bitmap.h>
 
-#define MAX_FLAKES 30    
+#define MAX_FLAKES 30
+#define DISABLE_SHAKE 1
 
 Window *window;
 TextLayer *text_layer;
@@ -296,6 +297,9 @@ void handle_init(void) {
     
     // accel event
     accel_tap_service_subscribe(&handle_accel);
+    
+    int noShake = persist_exists(DISABLE_SHAKE) ? persist_read_int(DISABLE_SHAKE) : 0;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%i", noShake);
 }
 
 void handle_deinit(void) {
