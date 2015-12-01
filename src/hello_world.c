@@ -51,7 +51,7 @@ static void update_display(Layer *layer, GContext *ctx) {
 	graphics_draw_bitmap_in_rect(ctx, bitmap, GRect(0, 0, 144, 168));
     
     GRect bounds = layer_get_bounds(layer);
-    GRect frame = GRect(0, bounds.size.h - 34, bounds.size.w, bounds.size.h);
+    GRect frame = GRect(0, 109, bounds.size.w, bounds.size.h);
 
     time_t def_time;
     struct tm *now;
@@ -86,7 +86,7 @@ static void update_display(Layer *layer, GContext *ctx) {
                        NULL
                       );
     //
-    frame = GRect(63, 77, 16, 16);
+    frame = GRect(65, 141, 16, 16);
     graphics_context_set_text_color(ctx, GColorWhite);
     snprintf(txt, sizeof(txt), "%d", now->tm_mday);
     graphics_draw_text(ctx, 
