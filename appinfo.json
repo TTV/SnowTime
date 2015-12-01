@@ -18,11 +18,10 @@
     "sdkVersion": "3",
     "shortName": "SnowFall2",
     "targetPlatforms": [
-        "basalt",
-        "chalk"
+        "basalt"
     ],
     "uuid": "dbc76cd6-0e0f-41d6-b7a3-02039596d917",
-    "versionLabel": "2.1",
+    "versionLabel": "2.2",
     "watchapp": {
         "watchface": true
     }

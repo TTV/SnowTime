@@ -48,10 +48,9 @@ void reset_scene() {
 }
 
 static void update_display(Layer *layer, GContext *ctx) {
-    GRect bounds = layer_get_bounds(layer);
+	graphics_draw_bitmap_in_rect(ctx, bitmap, GRect(0, 0, 144, 168));
     
-    graphics_draw_bitmap_in_rect(ctx, bitmap, bounds);
-   
+    GRect bounds = layer_get_bounds(layer);
     GRect frame = GRect(0, bounds.size.h - 34, bounds.size.w, bounds.size.h);
 
     time_t def_time;
@@ -184,7 +183,7 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
     
     layer_set_hidden(bitmap_layer, true);
     layer_set_hidden(text_layer_bkgnd, false);
-    phraseTimer = app_timer_register(2000, &handle_phrase_timeout, NULL);  // 2 second delay before hide
+    phraseTimer = app_timer_register(2000, &handle_phrase_timeout, NULL);  // 6 second delay before hide
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -250,12 +249,7 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	layer_mark_dirty(bitmap_layer);
 }
 
-void handle_init(void) {  
-    GRect bounds = layer_get_bounds(window_get_root_layer(window));
-    
-    #if defined(PBL_ROUND)
-    #endif    
-    
+void handle_init(void) {
     // main scene
     bitmap = gbitmap_create_blank(GSize(144, 168), GBitmapFormat8Bit);
 
