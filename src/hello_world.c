@@ -184,7 +184,7 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
     
     layer_set_hidden(bitmap_layer, true);
     layer_set_hidden(text_layer_bkgnd, false);
-    phraseTimer = app_timer_register(6000, &handle_phrase_timeout, NULL);  // 6 second delay before hide
+    phraseTimer = app_timer_register(2000, &handle_phrase_timeout, NULL);  // 2 second delay before hide
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
