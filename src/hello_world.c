@@ -19,6 +19,27 @@ static struct TFlake{
 void reset_scene() {
     bmpFill(bitmap, GColorBlack);
     bmpCopy(bkgnd, bitmap);
+    //
+    BatteryChargeState state = battery_state_service_peek();
+    GRect frame = GRect(68, 94, 8, 16);
+    bmpFillRect(bitmap, frame, GColorBlack);
+    if (!state.is_charging) {
+        if (state.charge_percent >= 80) {
+            // assume full charge
+        } else if (state.charge_percent >= 60) {
+            frame.size.h = 4;
+            bmpFillRect(bitmap, frame, GColorPictonBlue);
+        } else if (state.charge_percent >= 40) {
+            frame.size.h = 8;
+            bmpFillRect(bitmap, frame, GColorPictonBlue);
+        } else if (state.charge_percent >= 20) {
+            frame.size.h = 12;
+            bmpFillRect(bitmap, frame, GColorPictonBlue);
+        } else {
+            bmpFillRect(bitmap, frame, GColorRed);
+        }
+    }
+    //
     int c;
     for (c = 0; c < MAX_FLAKES; c++){
         flakes[c].active = 0;
@@ -27,9 +48,10 @@ void reset_scene() {
 }
 
 static void update_display(Layer *layer, GContext *ctx) {
-	graphics_draw_bitmap_in_rect(ctx, bitmap, GRect(0, 0, 144, 168));
-    
     GRect bounds = layer_get_bounds(layer);
+    
+    graphics_draw_bitmap_in_rect(ctx, bitmap, bounds);
+   
     GRect frame = GRect(0, bounds.size.h - 34, bounds.size.w, bounds.size.h);
 
     time_t def_time;
@@ -42,10 +64,35 @@ static void update_display(Layer *layer, GContext *ctx) {
     else
         strftime(txt, sizeof(txt), "%l:%M", now);
 
+    frame.origin.x += 2;
+    frame.origin.y += 2;
     graphics_context_set_text_color(ctx, GColorBlack);
     graphics_draw_text(ctx, 
                        txt,
                        fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK),
+                       frame,
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter,
+                       NULL
+                      );
+    frame.origin.x -= 2;
+    frame.origin.y -= 2;
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, 
+                       txt,
+                       fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK),
+                       frame,
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter,
+                       NULL
+                      );
+    //
+    frame = GRect(63, 77, 16, 16);
+    graphics_context_set_text_color(ctx, GColorWhite);
+    snprintf(txt, sizeof(txt), "%d", now->tm_mday);
+    graphics_draw_text(ctx, 
+                       txt,
+                       fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
                        frame,
                        GTextOverflowModeTrailingEllipsis,
                        GTextAlignmentCenter,
@@ -203,7 +250,12 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	layer_mark_dirty(bitmap_layer);
 }
 
-void handle_init(void) {
+void handle_init(void) {  
+    GRect bounds = layer_get_bounds(window_get_root_layer(window));
+    
+    #if defined(PBL_ROUND)
+    #endif    
+    
     // main scene
     bitmap = gbitmap_create_blank(GSize(144, 168), GBitmapFormat8Bit);
 

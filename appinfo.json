@@ -4,7 +4,7 @@
         ""
     ],
     "companyName": "ttv69",
-    "longName": "Snow Fall Time",
+    "longName": "Snow Fall Time 2",
     "projectType": "native",
     "resources": {
         "media": [
@@ -16,12 +16,13 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "SnowFall",
+    "shortName": "SnowFall2",
     "targetPlatforms": [
-        "basalt"
+        "basalt",
+        "chalk"
     ],
-    "uuid": "7b94712e-dbe8-4676-969c-1523259699c8",
-    "versionLabel": "1.7",
+    "uuid": "dbc76cd6-0e0f-41d6-b7a3-02039596d917",
+    "versionLabel": "2.1",
     "watchapp": {
         "watchface": true
     }
