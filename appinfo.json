@@ -1,6 +1,8 @@
 {
     "appKeys": {
-        "DISABLE_SHAKE": 1
+        "APPMSG_ACTION": 1,
+        "DAY_OFFSET": 3,
+        "DISABLE_SHAKE": 2
     },
     "capabilities": [
         "configurable"
@@ -10,6 +12,12 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/snowflake_icon.png",
+                "menuIcon": true,
+                "name": "SNOWFLAKE",
+                "type": "png"
+            },
             {
                 "file": "images/house2.png",
                 "name": "IMAGE_BKGND_2",
@@ -23,7 +31,7 @@
         "basalt"
     ],
     "uuid": "dbc76cd6-0e0f-41d6-b7a3-02039596d917",
-    "versionLabel": "2.3",
+    "versionLabel": "2.6",
     "watchapp": {
         "watchface": true
     }

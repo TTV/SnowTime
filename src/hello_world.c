@@ -3,7 +3,9 @@
 #include <bitmap.h>
 
 #define MAX_FLAKES 30
-#define DISABLE_SHAKE 1
+#define APPMSG_ACTION 1
+#define DISABLE_SHAKE 2
+#define DAY_OFFSET 3
 
 Window *window;
 TextLayer *text_layer;
@@ -11,6 +13,9 @@ Layer *bitmap_layer, *text_layer_bkgnd;
 GBitmap *bkgnd, *bitmap;
 AppTimer* phraseTimer;
 static char txt[] = "sleeps: xxx__dd/mm/yy__battery: xxx%_conn: xxx     "; // Needs to be static because it's used by the system later.
+
+int32_t disableShake;
+int32_t dayOffset;
 
 static struct TFlake{
     bool active;
@@ -121,7 +126,7 @@ static void easter_egg() {
     if (phraseTimer)
         return;
    
-    strcpy(txt, "\nIt's\nChristmas\n\n:-)");
+    strcpy(txt, "\nIt's\nHere\n\n:-)");
     
     text_layer_set_text(text_layer, txt);
     
@@ -137,23 +142,38 @@ static void easter_egg() {
 }
 
 static void handle_accel(AccelAxisType axis, int32_t direction) {
-    if (phraseTimer)
+    if (disableShake) {
         return;
+    }
+    if (phraseTimer) {
+        return;
+    }
 
     static char txt2[] = "                                        ";    
     
     strcpy(txt, "");
     
-    time_t def_time;
+    int day = 60 * 60 * 24;
+    int diff;
+    time_t iNow, iTarget;
     struct tm *now;
-    def_time = time(NULL);
-	now = localtime(&def_time);
+    struct tm target;
+    iNow = time(NULL); // now as a struct
+	now = localtime(&iNow); // now as an int
+    memcpy(&target, now, sizeof(struct tm)); // target is struct of mignight magic
+    target.tm_hour = 0;
+    target.tm_min = 0;
+    target.tm_sec = 0;
+    iNow = mktime(&target); // iNow = midnight today
+    target.tm_mday = 25;
+    target.tm_mon = 11;
+    iTarget = mktime(&target); // iTarget = midnight 25 Dec
+    diff = ((iTarget - iNow) / day) + dayOffset; // sec to days with offset
 
-    if (now->tm_mon == 11){
-        if (now->tm_mday <= 25){
-            snprintf(txt, sizeof(txt), "Sleeps: %d\n\n", 25 - now->tm_mday);
-        }
+    if (diff < 0) {
+        diff += 365; // does not account for leap years
     }
+    snprintf(txt, sizeof(txt), "Sleeps: %d\n\n", diff);
 
     // todo : JSconfiguration for date format
     strftime(txt2, sizeof(txt), "%d/%m/%y", now);
@@ -189,9 +209,27 @@ static void handle_accel(AccelAxisType axis, int32_t direction) {
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
     // easter egg at mignight
-    if ((tick_time->tm_mon == 11) && (tick_time->tm_mday == 25) && (tick_time->tm_hour == 0) && (tick_time->tm_min == 0) && (tick_time->tm_sec < 10)){
-        easter_egg();
-        return;
+    if ((tick_time->tm_hour == 0) && (tick_time->tm_min == 0) && (tick_time->tm_sec < 10)){
+        int day = 60 * 60 * 24;
+        int diff;
+        time_t iNow, iTarget;
+        struct tm *now;
+        struct tm target;
+        iNow = time(NULL); // now as a struct
+    	now = localtime(&iNow); // now as an int
+        memcpy(&target, now, sizeof(struct tm)); // target is struct of mignight magic
+        target.tm_hour = 0;
+        target.tm_min = 0;
+        target.tm_sec = 0;
+        iNow = mktime(&target); // iNow = midnight today
+        target.tm_mday = 25;
+        target.tm_mon = 11;
+        iTarget = mktime(&target); // iTarget = midnight 25 Dec
+        diff = ((iTarget - iNow) / day) + dayOffset; // sec to days with offset
+        if (diff == 0) {
+            easter_egg();
+            return;
+        }
     }
     
     int c;
@@ -250,6 +288,42 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	layer_mark_dirty(bitmap_layer);
 }
 
+static void appmsg_in_received(DictionaryIterator *received, void *context) {
+    Tuple *action_tuple = dict_find(received, APPMSG_ACTION);
+    Tuple *disable_shake_tuple, *day_offset_tuple;
+    int32_t v;
+    if (action_tuple) {
+        int32_t action = action_tuple->value->int32;
+        switch (action) {
+            case (0):
+                // get settings
+                // todo : somehow return the current settings
+                break;
+            case (1):
+                // set settings
+                disable_shake_tuple = dict_find(received, DISABLE_SHAKE);
+                if (disable_shake_tuple) {
+                    v = disable_shake_tuple->value->int32;
+                    if (v != disableShake) {
+                        disableShake = v;
+                        persist_write_int(DISABLE_SHAKE, disableShake);
+                        APP_LOG(APP_LOG_LEVEL_DEBUG, "SET disableShake : %d", (int)disableShake);
+                    }
+                }
+                day_offset_tuple = dict_find(received, DAY_OFFSET);
+                if (day_offset_tuple) {
+                    v = day_offset_tuple->value->int32;
+                    if (v != dayOffset) {
+                        dayOffset = v;
+                        persist_write_int(DAY_OFFSET, dayOffset);
+                        APP_LOG(APP_LOG_LEVEL_DEBUG, "SET dayOffset : %d", (int)dayOffset);
+                    }
+                }
+            break;
+        }
+    }
+}
+
 void handle_init(void) {
     // main scene
     bitmap = gbitmap_create_blank(GSize(144, 168), GBitmapFormat8Bit);
@@ -294,12 +368,19 @@ void handle_init(void) {
 
     // tick event
     tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+
+    // settings
+    disableShake = persist_exists(DISABLE_SHAKE) ? persist_read_int(DISABLE_SHAKE) : 0;
+    dayOffset = persist_exists(DAY_OFFSET) ? persist_read_int(DAY_OFFSET) : 0;
+    // APP_LOG(APP_LOG_LEVEL_DEBUG, "disableShake : %d", (int)disableShake);
     
     // accel event
     accel_tap_service_subscribe(&handle_accel);
-    
-    int noShake = persist_exists(DISABLE_SHAKE) ? persist_read_int(DISABLE_SHAKE) : 0;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "%i", noShake);
+
+    // config appSetting callback
+    app_message_register_inbox_received(&appmsg_in_received);
+    app_message_open(128, 128);
+
 }
 
 void handle_deinit(void) {
